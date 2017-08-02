@@ -1,0 +1,125 @@
+Transfering data from MySql to HDFS:
+
+Sqoop import:
+
+step-1
+
+First create a table in MqSql.
+
+	mysql> create table company(id int, name varchar(30),location varchar(20));
+
+----------------------------------------------
+
+Step -2:
+
+Insert data into table company.
+
+insert into company values(100,'acadgild','bangalore');
+insert into company values(200,'Deepak','bangalore');
+
+insert upto 5-6 records.
+
+mysql> select * from company;
++------+----------+-----------+
+| id   | name     | location  |
++------+----------+-----------+
+|  100 | acadgild | bangalore |
+|  200 | Deepak   | bangalore |
+|  300 | hello    | bangalore |
+|  400 | hello    | bangalore |
+|  500 | hello    | bangalore |
+|  600 | Deepak   | bangalore |
++------+----------+-----------+
+
+----------------------------------------------
+
+Step -3:
+
+Using sqoop import command load the company table data into HDFS directory - sqoop_import.
+
+sqoop import --connect jdbc:mysql://localhost/ACADGILD --username 'root' -P ^C-table 'company' --target-dir 'sqoop_import' --split-by id -m 3;
+
+	Here I have specified 3 mappers and primary key as id.
+
+----------------------------------------------
+
+Step -4 : Verifying the loaded data in HDFS
+
+If I type below command then I can see directory with name sqoop_import
+
+hadoop fs -ls /user/acadgild/
+
+drwxr-xr-x   - acadgild supergroup          0 2017-07-28 00:32 /user/acadgild/sqoop_import
+
+
+
+********************************************************************
+
+
+
+Sqoop export:
+
+sqoop export --connect jdbc:mysql://localhost/ACADGILD --username 'root' -P --table 'company_sqoop_export' --export-dir /sqoop_import -m 1;
+
+	Since here we are loading data into MySql no need to mention split by and mappers.
+
+
+mysql> select * from company_sqoop_export;
++------+----------+-----------+
+| id   | name     | location  |
++------+----------+-----------+
+|  100 | acadgild | bangalore |
+|  200 | Deepak   | bangalore |
+|  300 | hello    | bangalore |
+|  400 | hello    | bangalore |
+|  500 | hello    | bangalore |
+|  600 | Deepak   | bangalore |
++------+----------+-----------+
+
+
+********************************************************************
+
+
+Transfer data between mysql and hive :
+
+step 1: Grant all permission to root.
+
+mysql -u root
+
+grant all on *.* to 'root'@'localhost' with grant option;
+
+flush privileges;
+
+Step 2: Execute below sqoop command.
+
+sqoop import --connect jdbc:mysql://localhost:3306/ACADGILD --username 'root' -P --table 'company' --hive-import --target-dir /myHive --hive-table default.sqoopTOhive2 -m 1;
+
+Step 3: Check in HDFS for the directory myHive
+
+hadoop fs -ls /
+
+drwxr-xr-x   - acadgild supergroup          0 2017-07-28 05:32 /myHive
+
+-rw-r--r--   1 acadgild supergroup          0 2017-07-28 05:32 /myHive/_SUCCESS
+-rw-r--r--   1 acadgild supergroup        125 2017-07-28 05:32 /myHive/part-m-00000
+
+
+This shows that data has been successfully transfered from mysql to target directory.
+
+
+=========================================================================================
+
+
+Note: Here in my VM, I think I am unable to conect to metastore. So eventhough the above comand is absolutely fine amd the target directory is created, data is not able to load into hive table.
+
+And for the same I have raised ticket also but even could not find the solution for this. 
+
+SO I am submitting the assignments as it is.
+
+
+
+
+
+
+
+
